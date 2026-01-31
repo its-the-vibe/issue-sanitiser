@@ -9,6 +9,7 @@ A copilot agent to tidy up GitHub issue descriptions. This command-line tool use
 - Adds proper markdown formatting
 - Enhances context and adds relevant links
 - Suggests clear acceptance criteria
+- **Updates the issue directly on GitHub**
 - Embeds expert agent instructions for consistent results
 
 ## Prerequisites
@@ -16,6 +17,7 @@ A copilot agent to tidy up GitHub issue descriptions. This command-line tool use
 - Go 1.21 or higher (tested with Go 1.24)
 - GitHub Copilot subscription
 - GitHub Copilot CLI (authenticated)
+- GitHub CLI (`gh`) authenticated with the repository you want to update
 
 ## Installation
 
@@ -52,7 +54,8 @@ The tool will:
 2. Fetch the issue details
 3. Analyze the content
 4. Generate a sanitized version with improvements
-5. Display the result in your terminal
+5. **Update the issue directly on GitHub**
+6. Display a confirmation with the improvements made
 
 ## Example
 
@@ -61,15 +64,12 @@ $ ./issue-sanitiser https://github.com/example/project/issues/42
 
 Analyzing issue: https://github.com/example/project/issues/42
 
-# Sanitised Issue
+# Issue Updated Successfully! ✅
 
-## Suggested Title
+## Issue: https://github.com/example/project/issues/42
+
+## Title
 Fix authentication timeout in production environment
-
-## Sanitised Body
-[Complete rewritten issue with proper formatting, context, and links]
-
----
 
 ## Key Improvements Made
 - Fixed typos in original description
@@ -77,6 +77,8 @@ Fix authentication timeout in production environment
 - Linked to authentication module code
 - Added acceptance criteria
 - Included environment details
+
+The issue has been updated on GitHub and is now ready for action!
 
 ✅ Issue sanitisation complete!
 ```
@@ -89,6 +91,7 @@ The tool embeds the agent description from `.github/agents/issue-sanitiser-comma
 - Search the codebase for context
 - Find relevant documentation
 - Rewrite the issue following best practices
+- **Update the issue directly on GitHub using the `gh` CLI**
 
 ## Development
 
