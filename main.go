@@ -48,6 +48,13 @@ func main() {
 		SystemMessage: &copilot.SystemMessageConfig{
 			Content: agentDescription,
 		},
+		AvailableTools: []string{
+			"github-mcp-server-issue_read",
+			"github-mcp-server-search_code",
+			"github-mcp-server-get_file_contents",
+			"web_search",
+			"bash",
+		},
 	})
 	if err != nil {
 		log.Fatalf("Failed to create session: %v", err)
