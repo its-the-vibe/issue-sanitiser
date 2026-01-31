@@ -1,5 +1,5 @@
 ---
-name: issue-sanitiser
+name: issue-sanitiser-command
 description: Expert at examining GitHub issues and rewriting them with proper formatting, fixing typos, adding context, and linking to documentation
 tools:
   - github-mcp-server-issue_read
