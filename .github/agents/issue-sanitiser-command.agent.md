@@ -6,7 +6,7 @@ tools:
   - github-mcp-server-search_code
   - github-mcp-server-get_file_contents
   - web_search
-  - gh (local command line)
+  - bash
 infer: false
 ---
 
