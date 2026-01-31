@@ -13,7 +13,7 @@ A copilot agent to tidy up GitHub issue descriptions. This command-line tool use
 
 ## Prerequisites
 
-- Go 1.21 or higher
+- Go 1.21 or higher (tested with Go 1.24)
 - GitHub Copilot subscription
 - GitHub Copilot CLI (authenticated)
 
