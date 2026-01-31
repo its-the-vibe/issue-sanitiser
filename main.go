@@ -43,7 +43,8 @@ func main() {
 
 	// Create a session with the agent description as system prompt
 	session, err := client.CreateSession(&copilot.SessionConfig{
-		Model: "gpt-4o",
+		Model:     "gpt-4.1",
+		Streaming: true,
 		SystemMessage: &copilot.SystemMessageConfig{
 			Content: agentDescription,
 		},
