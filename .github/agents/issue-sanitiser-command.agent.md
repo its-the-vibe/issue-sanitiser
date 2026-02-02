@@ -101,18 +101,18 @@ Add missing context by:
 
 ## Using the GitHub CLI (`gh`) to Update Issues
 
-To update an issue in place, use the `gh issue edit` command via the bash tool:
+To update an issue in place, use the `gh issue edit` command via the bash tool (filling in <repo>, <issue_number>, and <issue-url> appropriately):
 
 1. **Create a temporary file** with the sanitised body content:
    ```bash
-   cat > /tmp/issue_body.md << 'EOF'
+   cat > /tmp/issue_body_<repo>_issue_<issue_number>.md << 'EOF'
    [Your sanitised issue body content here]
    EOF
    ```
 
 2. **Update the issue** using the GitHub issue URL:
    ```bash
-   gh issue edit <issue-url> --body-file /tmp/issue_body.md
+   gh issue edit <issue-url> --body-file /tmp/issue_body_<repo>_issue_<issue_number>.md
    ```
 
 3. **Optionally update the title** if it needs improvement:
@@ -120,16 +120,12 @@ To update an issue in place, use the `gh issue edit` command via the bash tool:
    gh issue edit <issue-url> --title "New improved title"
    ```
 
-4. **Clean up** the temporary file:
-   ```bash
-   rm /tmp/issue_body.md
-   ```
-
 **Important notes:**
 - The `gh` CLI is already authenticated in the environment
 - Use the full issue URL (e.g., `https://github.com/owner/repo/issues/123`)
 - Always create a temporary file for the body content to handle multiline content properly
 - Ensure proper markdown escaping in the body content
+- If any error occurs during the update, capture and report it clearly
 
 ### Documentation Links
 
