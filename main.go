@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	_ "embed"
 	"fmt"
 	"log"
@@ -35,14 +36,16 @@ func main() {
 		LogLevel: "error",
 	})
 
+	ctx := context.Background()
+
 	// Start the client
-	if err := client.Start(); err != nil {
+	if err := client.Start(ctx); err != nil {
 		log.Fatalf("Failed to start Copilot client: %v", err)
 	}
 	defer client.Stop()
 
 	// Create a session with the agent description as system prompt
-	session, err := client.CreateSession(&copilot.SessionConfig{
+	session, err := client.CreateSession(ctx, &copilot.SessionConfig{
 		Model:     "gpt-4.1",
 		Streaming: true,
 		SystemMessage: &copilot.SystemMessageConfig{
@@ -84,7 +87,7 @@ func main() {
 
 	// Send the issue URL to the agent
 	fmt.Printf("Analyzing issue: %s\n\n", issueURL)
-	_, err = session.Send(copilot.MessageOptions{
+	_, err = session.Send(ctx, copilot.MessageOptions{
 		Prompt: fmt.Sprintf("Please sanitize this GitHub issue: %s", issueURL),
 	})
 	if err != nil {
