@@ -50,6 +50,7 @@ func main() {
 		Streaming: true,
 		SystemMessage: &copilot.SystemMessageConfig{
 			Content: agentDescription,
+			Mode:    "replace",
 		},
 		AvailableTools: []string{
 			"github-mcp-server-issue_read",
