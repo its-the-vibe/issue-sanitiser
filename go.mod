@@ -1,6 +1,6 @@
 module github.com/its-the-vibe/issue-sanitiser
 
-go 1.25.6
+go 1.26.0
 
 require github.com/github/copilot-sdk/go v0.1.22
 
