@@ -59,6 +59,7 @@ func main() {
 			"web_search",
 			"bash",
 		},
+		OnPermissionRequest: copilot.PermissionHandler.ApproveAll,
 	})
 	if err != nil {
 		log.Fatalf("Failed to create session: %v", err)
