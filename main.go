@@ -71,18 +71,17 @@ func main() {
 	var response strings.Builder
 
 	session.On(func(event copilot.SessionEvent) {
-		if event.Type == "assistant.message" {
-			if event.Data.Content != nil {
+		switch d := event.Data.(type) {
+		case *copilot.AssistantMessageData:
+			if d.Content != "" {
 				// Stream the content as it arrives
-				fmt.Print(*event.Data.Content)
-				response.WriteString(*event.Data.Content)
+				fmt.Print(d.Content)
+				response.WriteString(d.Content)
 			}
-		}
-		if event.Type == "session.idle" {
+		case *copilot.SessionIdleData:
 			close(done)
-		}
-		if event.Type == "error" {
-			fmt.Fprintf(os.Stderr, "\nError: %v\n", event.Data)
+		case *copilot.SessionErrorData:
+			fmt.Fprintf(os.Stderr, "\nError: %v\n", d.Message)
 			close(done)
 		}
 	})
