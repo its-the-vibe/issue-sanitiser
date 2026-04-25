@@ -1,5 +1,7 @@
 # issue-sanitiser
 
+[![CI](https://github.com/its-the-vibe/issue-sanitiser/actions/workflows/ci.yaml/badge.svg)](https://github.com/its-the-vibe/issue-sanitiser/actions/workflows/ci.yaml)
+
 A copilot agent to tidy up GitHub issue descriptions. This command-line tool uses GitHub Copilot to analyze and rewrite GitHub issues with better formatting, context, and clarity.
 
 ## Features
