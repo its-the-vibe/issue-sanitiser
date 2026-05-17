@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"os/exec"
 
-	"github.com/google/generative-ai-go/genai"
-	"google.golang.org/api/iterator"
-	"google.golang.org/api/option"
+	"google.golang.org/genai"
 )
 
 type GeminiBackend struct {
@@ -27,7 +25,10 @@ func NewGeminiBackend(model, apiKey string) *GeminiBackend {
 }
 
 func (b *GeminiBackend) Initialize(ctx context.Context) error {
-	client, err := genai.NewClient(ctx, option.WithAPIKey(b.apiKey))
+	client, err := genai.NewClient(ctx, &genai.ClientConfig{
+		APIKey:  b.apiKey,
+		Backend: genai.BackendGeminiAPI,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to create Gemini client: %w", err)
 	}
@@ -36,9 +37,6 @@ func (b *GeminiBackend) Initialize(ctx context.Context) error {
 }
 
 func (b *GeminiBackend) Process(ctx context.Context, systemPrompt string, userPrompt string) error {
-	model := b.client.GenerativeModel(b.model)
-	model.SystemInstruction = genai.NewUserContent(genai.Text(systemPrompt))
-
 	// Define the bash tool
 	bashTool := &genai.Tool{
 		FunctionDeclarations: []*genai.FunctionDeclaration{
@@ -58,66 +56,70 @@ func (b *GeminiBackend) Process(ctx context.Context, systemPrompt string, userPr
 			},
 		},
 	}
-	model.Tools = []*genai.Tool{bashTool}
 
-	session := model.StartChat()
+	chat, err := b.client.Chats.Create(ctx, b.model, &genai.GenerateContentConfig{
+		SystemInstruction: &genai.Content{
+			Parts: []*genai.Part{{Text: systemPrompt}},
+		},
+		Tools: []*genai.Tool{bashTool},
+	}, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create Gemini chat: %w", err)
+	}
 
 	// Initial message
-	iter := session.SendMessageStream(ctx, genai.Text(userPrompt))
+	parts := []genai.Part{{Text: userPrompt}}
 
 	for {
-		resp, err := iter.Next()
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
-			return fmt.Errorf("error during Gemini stream: %w", err)
-		}
+		iter := chat.SendMessageStream(ctx, parts...)
+		parts = nil // Clear parts for next iteration
 
-		if len(resp.Candidates) == 0 {
-			continue
-		}
+		for resp, err := range iter {
+			if err != nil {
+				return fmt.Errorf("error during Gemini stream: %w", err)
+			}
 
-		candidate := resp.Candidates[0]
-		if candidate.Content == nil {
-			continue
-		}
+			if len(resp.Candidates) == 0 || resp.Candidates[0].Content == nil {
+				continue
+			}
 
-		// Collect function calls to handle them after the stream or if they appear
-		var funcResponses []genai.Part
+			candidate := resp.Candidates[0]
+			for _, part := range candidate.Content.Parts {
+				if part.Text != "" {
+					fmt.Print(part.Text)
+				}
+				if part.FunctionCall != nil {
+					fc := part.FunctionCall
+					if fc.Name == "bash" {
+						cmdArg, ok := fc.Args["command"].(string)
+						if !ok {
+							return fmt.Errorf("invalid command argument for bash tool")
+						}
 
-		for _, part := range candidate.Content.Parts {
-			switch p := part.(type) {
-			case genai.Text:
-				fmt.Print(string(p))
-			case genai.FunctionCall:
-				if p.Name == "bash" {
-					cmdArg, ok := p.Args["command"].(string)
-					if !ok {
-						return fmt.Errorf("invalid command argument for bash tool")
+						// Execute bash command
+						output, err := executeBash(cmdArg)
+						var responseContent string
+						if err != nil {
+							responseContent = fmt.Sprintf("Error executing command: %v\nOutput: %s", err, output)
+						} else {
+							responseContent = output
+						}
+
+						parts = append(parts, genai.Part{
+							FunctionResponse: &genai.FunctionResponse{
+								Name: "bash",
+								Response: map[string]any{
+									"output": responseContent,
+								},
+							},
+						})
 					}
-
-					// Execute bash command
-					output, err := executeBash(cmdArg)
-					var responseContent string
-					if err != nil {
-						responseContent = fmt.Sprintf("Error executing command: %v\nOutput: %s", err, output)
-					} else {
-						responseContent = output
-					}
-
-					funcResponses = append(funcResponses, genai.FunctionResponse{
-						Name: "bash",
-						Response: map[string]any{
-							"output": responseContent,
-						},
-					})
 				}
 			}
 		}
 
-		if len(funcResponses) > 0 {
-			iter = session.SendMessageStream(ctx, funcResponses...)
+		if len(parts) == 0 {
+			break
 		}
 	}
 
@@ -131,8 +133,5 @@ func executeBash(command string) (string, error) {
 }
 
 func (b *GeminiBackend) Close() error {
-	if b.client != nil {
-		return b.client.Close()
-	}
 	return nil
 }
