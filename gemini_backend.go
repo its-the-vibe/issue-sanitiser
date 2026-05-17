@@ -16,7 +16,8 @@ type GeminiBackend struct {
 
 func NewGeminiBackend(model, apiKey string) *GeminiBackend {
 	if model == "" {
-		model = "gemini-1.5-pro"
+		model = "gemini-2.5-flash"
+		// model = "gemini-flash-latest"
 	}
 	return &GeminiBackend{
 		model:  model,
@@ -68,11 +69,12 @@ func (b *GeminiBackend) Process(ctx context.Context, systemPrompt string, userPr
 	}
 
 	// Initial message
-	parts := []genai.Part{{Text: userPrompt}}
+	messageParts := []genai.Part{{Text: userPrompt}}
 
 	for {
-		iter := chat.SendMessageStream(ctx, parts...)
-		parts = nil // Clear parts for next iteration
+		iter := chat.SendMessageStream(ctx, messageParts...)
+		messageParts = nil // Clear parts for next iteration
+		hasToolCall := false
 
 		for resp, err := range iter {
 			if err != nil {
@@ -89,6 +91,9 @@ func (b *GeminiBackend) Process(ctx context.Context, systemPrompt string, userPr
 					fmt.Print(part.Text)
 				}
 				if part.FunctionCall != nil {
+					fmt.Printf("\n[Tool Call] %s\n", part.FunctionCall.Name)
+					fmt.Printf("Arguments: %v\n", part.FunctionCall.Args)
+					hasToolCall = true
 					fc := part.FunctionCall
 					if fc.Name == "bash" {
 						cmdArg, ok := fc.Args["command"].(string)
@@ -105,8 +110,10 @@ func (b *GeminiBackend) Process(ctx context.Context, systemPrompt string, userPr
 							responseContent = output
 						}
 
-						parts = append(parts, genai.Part{
+						// Send function response in a separate message
+						messageParts = append(messageParts, genai.Part{
 							FunctionResponse: &genai.FunctionResponse{
+								ID:   fc.ID,
 								Name: "bash",
 								Response: map[string]any{
 									"output": responseContent,
@@ -118,7 +125,8 @@ func (b *GeminiBackend) Process(ctx context.Context, systemPrompt string, userPr
 			}
 		}
 
-		if len(parts) == 0 {
+		// Only continue the loop if there were tool calls; otherwise, we're done
+		if !hasToolCall || len(messageParts) == 0 {
 			break
 		}
 	}

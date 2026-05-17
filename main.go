@@ -11,7 +11,10 @@ import (
 )
 
 //go:embed .github/agents/issue-sanitiser-command.agent.md
-var agentDescription string
+var agentDescriptionCopilot string
+
+//go:embed .github/agents/issue-sanitiser-command.agent.gemini.md
+var agentDescriptionGemini string
 
 func main() {
 	// Define CLI flags
@@ -45,10 +48,12 @@ func main() {
 	}
 
 	var backend LLMBackend
+	var agentDescription string
 
 	switch strings.ToLower(*backendType) {
 	case "copilot":
 		backend = NewCopilotBackend(*modelName)
+		agentDescription = agentDescriptionCopilot
 	case "gemini":
 		// Prefer explicit flag, fall back to environment variable — do not expose the env value in --help
 		geminiAPIKey := *geminiAPIKeyFlag
@@ -59,6 +64,7 @@ func main() {
 			log.Fatal("Error: Gemini API key is required when using the Gemini backend. Use --gemini-api-key or set GEMINI_API_KEY environment variable.")
 		}
 		backend = NewGeminiBackend(*modelName, geminiAPIKey)
+		agentDescription = agentDescriptionGemini
 	default:
 		log.Fatalf("Error: Unsupported backend type: %s", *backendType)
 	}
