@@ -13,13 +13,19 @@ A copilot agent to tidy up GitHub issue descriptions. This command-line tool use
 - Suggests clear acceptance criteria
 - **Updates the issue directly on GitHub**
 - Embeds expert agent instructions for consistent results
+- **Support for multiple LLM backends (GitHub Copilot and Google Gemini)**
 
 ## Prerequisites
 
 - Go 1.21 or higher (tested with Go 1.24)
+- GitHub CLI (`gh`) authenticated with the repository you want to update
+
+### For GitHub Copilot Backend (Default)
 - GitHub Copilot subscription
 - GitHub Copilot CLI (authenticated)
-- GitHub CLI (`gh`) authenticated with the repository you want to update
+
+### For Gemini Backend
+- Gemini API Key (get one at [Google AI Studio](https://aistudio.google.com/))
 
 ## Installation
 
@@ -39,17 +45,32 @@ go install github.com/its-the-vibe/issue-sanitiser@latest
 
 ## Usage
 
-Simply provide a GitHub issue URL as an argument:
+Simply provide a GitHub issue URL as an argument. By default, it uses the GitHub Copilot backend.
+
+### Using GitHub Copilot (Default)
 
 ```bash
 ./issue-sanitiser https://github.com/owner/repo/issues/123
 ```
 
-Or if installed via go install:
+### Using Google Gemini
+
+To use Gemini, you need to provide an API key either via the `GEMINI_API_KEY` environment variable or the `--gemini-api-key` flag.
 
 ```bash
-issue-sanitiser https://github.com/owner/repo/issues/123
+# Using environment variable
+export GEMINI_API_KEY="your-api-key"
+./issue-sanitiser --backend gemini https://github.com/owner/repo/issues/123
+
+# Using CLI flag
+./issue-sanitiser --backend gemini --gemini-api-key "your-api-key" https://github.com/owner/repo/issues/123
 ```
+
+### Options
+
+- `--backend`: Choose between `copilot` (default) or `gemini`.
+- `--gemini-api-key`: Your Gemini API key.
+- `--model`: Specific model name to use (e.g., `gemini-1.5-flash` or `gpt-4o`).
 
 The tool will:
 1. Parse the issue URL
@@ -99,7 +120,7 @@ The tool embeds the agent description from `.github/agents/issue-sanitiser-comma
 
 ```bash
 # Run without building
-go run main.go https://github.com/owner/repo/issues/123
+go run . https://github.com/owner/repo/issues/123
 
 # Build
 go build -o issue-sanitiser

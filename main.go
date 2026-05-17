@@ -3,26 +3,39 @@ package main
 import (
 	"context"
 	_ "embed"
+	"flag"
 	"fmt"
 	"log"
 	"os"
 	"strings"
-
-	copilot "github.com/github/copilot-sdk/go"
 )
 
 //go:embed .github/agents/issue-sanitiser-command.agent.md
 var agentDescription string
 
 func main() {
+	// Define CLI flags
+	backendType := flag.String("backend", "copilot", "LLM backend to use (copilot or gemini)")
+	geminiAPIKey := flag.String("gemini-api-key", os.Getenv("GEMINI_API_KEY"), "Gemini API key (defaults to GEMINI_API_KEY env var)")
+	modelName := flag.String("model", "", "Specific model name to use (optional)")
+
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: %s [options] <github-issue-url>\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "Example: %s https://github.com/owner/repo/issues/123\n\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "Options:\n")
+		flag.PrintDefaults()
+	}
+
+	flag.Parse()
+
 	// Check if an issue URL was provided
-	if len(os.Args) < 2 {
-		fmt.Println("Usage: issue-sanitiser <github-issue-url>")
-		fmt.Println("Example: issue-sanitiser https://github.com/owner/repo/issues/123")
+	args := flag.Args()
+	if len(args) < 1 {
+		flag.Usage()
 		os.Exit(1)
 	}
 
-	issueURL := os.Args[1]
+	issueURL := args[0]
 
 	// Validate the URL is a GitHub issue
 	if !strings.Contains(issueURL, "github.com") || !strings.Contains(issueURL, "/issues/") {
@@ -31,72 +44,34 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Create Copilot client
-	client := copilot.NewClient(&copilot.ClientOptions{
-		LogLevel: "error",
-	})
+	var backend LLMBackend
+
+	switch strings.ToLower(*backendType) {
+	case "copilot":
+		backend = NewCopilotBackend(*modelName)
+	case "gemini":
+		if *geminiAPIKey == "" {
+			log.Fatal("Error: Gemini API key is required when using the Gemini backend. Use --gemini-api-key or set GEMINI_API_KEY environment variable.")
+		}
+		backend = NewGeminiBackend(*modelName, *geminiAPIKey)
+	default:
+		log.Fatalf("Error: Unsupported backend type: %s", *backendType)
+	}
 
 	ctx := context.Background()
 
-	// Start the client
-	if err := client.Start(ctx); err != nil {
-		log.Fatalf("Failed to start Copilot client: %v", err)
+	// Initialize the backend
+	if err := backend.Initialize(ctx); err != nil {
+		log.Fatalf("Failed to initialize backend: %v", err)
 	}
-	defer client.Stop()
-
-	// Create a session with the agent description as system prompt
-	session, err := client.CreateSession(ctx, &copilot.SessionConfig{
-		Model:     "gpt-4.1",
-		Streaming: true,
-		SystemMessage: &copilot.SystemMessageConfig{
-			Content: agentDescription,
-			Mode:    "replace",
-		},
-		AvailableTools: []string{
-			"github-mcp-server-issue_read",
-			"github-mcp-server-search_code",
-			"github-mcp-server-get_file_contents",
-			"web_search",
-			"bash",
-		},
-		OnPermissionRequest: copilot.PermissionHandler.ApproveAll,
-	})
-	if err != nil {
-		log.Fatalf("Failed to create session: %v", err)
-	}
-	defer session.Disconnect()
-
-	// Set up event handler to collect and display the response
-	done := make(chan bool)
-	var response strings.Builder
-
-	session.On(func(event copilot.SessionEvent) {
-		switch d := event.Data.(type) {
-		case *copilot.AssistantMessageData:
-			if d.Content != "" {
-				// Stream the content as it arrives
-				fmt.Print(d.Content)
-				response.WriteString(d.Content)
-			}
-		case *copilot.SessionIdleData:
-			close(done)
-		case *copilot.SessionErrorData:
-			fmt.Fprintf(os.Stderr, "\nError: %v\n", d.Message)
-			close(done)
-		}
-	})
+	defer backend.Close()
 
 	// Send the issue URL to the agent
-	fmt.Printf("Analyzing issue: %s\n\n", issueURL)
-	_, err = session.Send(ctx, copilot.MessageOptions{
-		Prompt: fmt.Sprintf("Please sanitize this GitHub issue: %s", issueURL),
-	})
+	fmt.Printf("Analyzing issue with %s backend: %s\n\n", *backendType, issueURL)
+	err := backend.Process(ctx, agentDescription, fmt.Sprintf("Please sanitize this GitHub issue: %s", issueURL))
 	if err != nil {
-		log.Fatalf("Failed to send message: %v", err)
+		log.Fatalf("Failed to process issue: %v", err)
 	}
-
-	// Wait for the agent to finish processing
-	<-done
 
 	fmt.Println("\n\n✅ Issue sanitisation complete!")
 }
