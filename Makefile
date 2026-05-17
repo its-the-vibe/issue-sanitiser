@@ -6,7 +6,7 @@ APP_NAME=issue-sanitiser
 .PHONY: build run test lint clean install
 
 build:
-	go build -o $(APP_NAME) main.go
+	go build -o $(APP_NAME) .
 
 install:
 	go install
