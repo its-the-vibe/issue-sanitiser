@@ -120,7 +120,7 @@ The tool embeds the agent description from `.github/agents/issue-sanitiser-comma
 
 ```bash
 # Run without building
-go run main.go https://github.com/owner/repo/issues/123
+go run . https://github.com/owner/repo/issues/123
 
 # Build
 go build -o issue-sanitiser
