@@ -16,7 +16,7 @@ var agentDescription string
 func main() {
 	// Define CLI flags
 	backendType := flag.String("backend", "copilot", "LLM backend to use (copilot or gemini)")
-	geminiAPIKey := flag.String("gemini-api-key", os.Getenv("GEMINI_API_KEY"), "Gemini API key (defaults to GEMINI_API_KEY env var)")
+	geminiAPIKeyFlag := flag.String("gemini-api-key", "", "Gemini API key (or set GEMINI_API_KEY env var)")
 	modelName := flag.String("model", "", "Specific model name to use (optional)")
 
 	flag.Usage = func() {
@@ -50,10 +50,15 @@ func main() {
 	case "copilot":
 		backend = NewCopilotBackend(*modelName)
 	case "gemini":
-		if *geminiAPIKey == "" {
+		// Prefer explicit flag, fall back to environment variable — do not expose the env value in --help
+		geminiAPIKey := *geminiAPIKeyFlag
+		if geminiAPIKey == "" {
+			geminiAPIKey = os.Getenv("GEMINI_API_KEY")
+		}
+		if geminiAPIKey == "" {
 			log.Fatal("Error: Gemini API key is required when using the Gemini backend. Use --gemini-api-key or set GEMINI_API_KEY environment variable.")
 		}
-		backend = NewGeminiBackend(*modelName, *geminiAPIKey)
+		backend = NewGeminiBackend(*modelName, geminiAPIKey)
 	default:
 		log.Fatalf("Error: Unsupported backend type: %s", *backendType)
 	}
