@@ -64,7 +64,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create session: %v", err)
 	}
-	defer session.Destroy()
+	defer session.Disconnect()
 
 	// Set up event handler to collect and display the response
 	done := make(chan bool)
