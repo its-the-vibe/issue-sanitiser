@@ -14,7 +14,7 @@ type CopilotBackend struct {
 
 func NewCopilotBackend(model string) *CopilotBackend {
 	if model == "" {
-		model = "gpt-4.1"
+		model = "claude-haiku-4.5"
 	}
 	return &CopilotBackend{
 		model: model,
