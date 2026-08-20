@@ -33,9 +33,10 @@ func (b *CopilotBackend) Initialize(ctx context.Context) error {
 }
 
 func (b *CopilotBackend) Process(ctx context.Context, systemPrompt string, userPrompt string) error {
+	streaming := true
 	session, err := b.client.CreateSession(ctx, &copilot.SessionConfig{
 		Model:     b.model,
-		Streaming: true,
+		Streaming: &streaming,
 		SystemMessage: &copilot.SystemMessageConfig{
 			Content: systemPrompt,
 			Mode:    "replace",
