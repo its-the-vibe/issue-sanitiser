@@ -24,6 +24,11 @@ func NewCopilotBackend(model string) *CopilotBackend {
 func (b *CopilotBackend) Initialize(ctx context.Context) error {
 	b.client = copilot.NewClient(&copilot.ClientOptions{
 		LogLevel: "error",
+		Connection: copilot.StdioConnection{
+			// explicitly setting this because the copilot sdk
+			// developers broke this between version 1.0.11 and 1.0.13
+			Path: "copilot",
+		},
 	})
 
 	if err := b.client.Start(ctx); err != nil {
