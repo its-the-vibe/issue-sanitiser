@@ -3,7 +3,7 @@ module github.com/its-the-vibe/issue-sanitiser
 go 1.27.1
 
 require (
-	github.com/github/copilot-sdk/go v1.0.14
+	github.com/github/copilot-sdk/go v1.0.15
 	google.golang.org/genai v1.71.0
 )
 
