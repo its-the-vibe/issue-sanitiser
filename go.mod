@@ -4,7 +4,7 @@ go 1.27.3
 
 require (
 	github.com/github/copilot-sdk/go v1.0.26
-	google.golang.org/genai v1.75.0
+	google.golang.org/genai v1.76.0
 )
 
 require (
