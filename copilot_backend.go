@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	copilot "github.com/github/copilot-sdk/go"
+	copilot "github.com/microsoft/copilot-sdk/go/v2"
 )
 
 type CopilotBackend struct {
@@ -23,8 +23,11 @@ func NewCopilotBackend(model string) *CopilotBackend {
 
 func (b *CopilotBackend) Initialize(ctx context.Context) error {
 	b.client = copilot.NewClient(&copilot.ClientOptions{
-		LogLevel: "error",
-		Connection: copilot.StdioConnection{
+		Mode: copilot.ModeCodingAgent,
+		Observability: copilot.ClientObservabilityOptions{
+			LogLevel: "error",
+		},
+		Runtime: copilot.SpawnedStdioConnection{
 			// explicitly setting this because the copilot sdk
 			// developers broke this between version 1.0.11 and 1.0.13
 			Path: "copilot",
@@ -39,21 +42,27 @@ func (b *CopilotBackend) Initialize(ctx context.Context) error {
 
 func (b *CopilotBackend) Process(ctx context.Context, systemPrompt string, userPrompt string) error {
 	streaming := true
-	session, err := b.client.CreateSession(ctx, &copilot.SessionConfig{
-		Model:     b.model,
-		Streaming: &streaming,
+	session, err := b.client.CreateSession(ctx, &copilot.CreateSessionOptions{
+		Model: b.model,
+		Events: copilot.SessionEventOptions{
+			Streaming: &streaming,
+		},
 		SystemMessage: &copilot.SystemMessageConfig{
 			Content: systemPrompt,
 			Mode:    "replace",
 		},
-		AvailableTools: []string{
-			"github-mcp-server-issue_read",
-			"github-mcp-server-search_code",
-			"github-mcp-server-get_file_contents",
-			"web_search",
-			"bash",
+		Tools: copilot.SessionToolOptions{
+			AvailableTools: []string{
+				"github-mcp-server-issue_read",
+				"github-mcp-server-search_code",
+				"github-mcp-server-get_file_contents",
+				"web_search",
+				"bash",
+			},
 		},
-		OnPermissionRequest: copilot.PermissionHandler.ApproveAll,
+		Permissions: copilot.SessionPermissionOptions{
+			OnRequest: copilot.PermissionHandler.ApproveAll,
+		},
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create session: %w", err)
