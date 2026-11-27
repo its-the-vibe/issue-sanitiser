@@ -3,7 +3,7 @@ module github.com/its-the-vibe/issue-sanitiser
 go 1.27.4
 
 require (
-	github.com/microsoft/copilot-sdk/go/v2 v2.0.1
+	github.com/microsoft/copilot-sdk/go/v2 v2.0.4
 	google.golang.org/genai v1.79.1
 )
 
@@ -15,6 +15,7 @@ require (
 	github.com/coder/websocket v1.8.15 // indirect
 	github.com/ebitengine/purego v0.11.3 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
+	github.com/go-json-experiment/json v1.27.2 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
